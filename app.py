@@ -74,7 +74,7 @@ else:
                 else:
                     display_total = round(val, 2) if val % 1 != 0 else int(val)
 
-                # Добавляем примечание "в пути" без цифр, если значение есть
+                # Добавляем примечание "в пути" без цифр
                 display_name = p['name']
                 if p['has_transit']:
                     display_name = f"{p['name']} (в пути)"
@@ -89,22 +89,26 @@ else:
 
         st.write(f"Найдено позиций: {len(result_df)}")
 
-        # Функция для подсветки строк
-        def color_rows(row_index):
+        # Убираем техническую колонку ДО применения стилей
+        display_df = result_df[["Остаток (метр/шт)", "Наименование товара"]].copy()
+        raw_vals = result_df["_raw_val"].tolist()
+
+        # Функция для подсветки строк по индексам
+        def color_rows(row):
+            idx = row.name
             try:
-                val = float(result_df.loc[row_index, '_raw_val'])
+                val = float(raw_vals[idx])
                 if val > 50:
-                    return ['background-color: #d4edda'] * len(result_df.columns)  # Зеленый (>50)
+                    return ['background-color: #d4edda'] * len(row)  # Зеленый (>50)
                 elif val < 10:
-                    return ['background-color: #f8d7da'] * len(result_df.columns)  # Красный (<10)
+                    return ['background-color: #f8d7da'] * len(row)  # Красный (<10)
                 else:
-                    return ['background-color: #fff3cd'] * len(result_df.columns)  # Желтый (от 10 до 50)
+                    return ['background-color: #fff3cd'] * len(row)  # Желтый (от 10 до 50)
             except:
                 pass
-            return [''] * len(result_df.columns)
+            return [''] * len(row)
 
-        display_df = result_df.drop(columns=["_raw_val"])
-        styled_df = display_df.style.apply(lambda row: color_rows(row.name), axis=1)
+        styled_df = display_df.style.apply(color_rows, axis=1)
 
         st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
