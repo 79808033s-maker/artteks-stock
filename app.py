@@ -6,6 +6,8 @@ import datetime
 st.set_page_config(page_title="Учет Остатков — Art-Teksgroup", layout="centered")
 
 st.title("📦 Остатки Art-Teksgroup SRL Moldova")
+st.markdown("📞 **Телефон для справок:** `079202099`")
+st.markdown("---")
 
 file_path = None
 for filename in os.listdir("."):
