@@ -46,17 +46,17 @@ else:
                 total_val = 0.0
 
             raw_transit = row.iloc[10]
-            has_transit = False
+            transit_status = ""
             try:
                 if pd.notna(raw_transit) and float(raw_transit) > 0:
-                    has_transit = True
+                    transit_status = "В пути"
             except:
                 pass
 
             products.append({
                 'name': name,
                 'total': total_val,
-                'has_transit': has_transit
+                'transit': transit_status
             })
 
         query = st.text_input("🔍 Поиск товара:", "").strip().lower()
@@ -71,13 +71,10 @@ else:
                 else:
                     display_total = round(val, 2) if val % 1 != 0 else int(val)
 
-                display_name = p['name']
-                if p['has_transit']:
-                    display_name = f"{p['name']} (в пути)"
-
                 filtered_data.append({
                     "Остаток (метр/шт)": display_total,
-                    "Наименование товара": display_name,
+                    "Наименование товара": p['name'],
+                    "Статус": p['transit'],
                     "_raw_val": val
                 })
 
@@ -85,7 +82,7 @@ else:
 
         st.write(f"Найдено позиций: {len(result_df)}")
 
-        display_df = result_df[["Остаток (метр/шт)", "Наименование товара"]].copy()
+        display_df = result_df[["Остаток (метр/шт)", "Наименование товара", "Статус"]].copy()
         raw_vals = result_df["_raw_val"].tolist()
 
         def color_rows(row):
@@ -93,11 +90,11 @@ else:
             try:
                 val = float(raw_vals[idx])
                 if val > 50:
-                    return ['background-color: #d4edda; color: #155724'] * len(row)  # Зеленый
+                    return ['background-color: #d4edda; color: #155724'] * len(row)
                 elif val < 10:
-                    return ['background-color: #f8d7da; color: #721c24'] * len(row)  # Красный
+                    return ['background-color: #f8d7da; color: #721c24'] * len(row)
                 else:
-                    return ['background-color: #fff3cd; color: #856404'] * len(row)  # Желтый
+                    return ['background-color: #fff3cd; color: #856404'] * len(row)
             except:
                 pass
             return [''] * len(row)
