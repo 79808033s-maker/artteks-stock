@@ -66,18 +66,21 @@ else:
             if query in p['name'].lower():
                 val = p['total']
                 
-                # Форматирование остатка: >50 или округление до 1 знака
+                # Форматирование остатка строго до 1 знака (без длинных нулей)
                 if val > 50:
                     display_total = ">50"
                 elif val % 1 == 0:
                     display_total = int(val)
                 else:
-                    display_total = round(val, 1)
+                    display_total = f"{val:.1f}"
+
+                # Делаем статус жирным через Markdown-разметку для таблицы
+                display_status = f"**{p['transit']}**" if p['transit'] else ""
 
                 filtered_data.append({
                     "Остаток (метр/шт)": display_total,
                     "Наименование товара": p['name'],
-                    "Статус": p['transit'],
+                    "Статус": display_status,
                     "_raw_val": val
                 })
 
