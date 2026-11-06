@@ -5,7 +5,7 @@ import datetime
 
 st.set_page_config(page_title="Учет Остатков — Art-Teksgroup", layout="centered")
 
-# Кастомный CSS для подсветки поля поиска желтоватым цветом
+# Кастомный CSS для подсветки поля поиска и яркой красной кнопки со стрелкой
 st.markdown("""
     <style>
     input[aria-label="🔍 Поиск товара:"] {
@@ -13,6 +13,22 @@ st.markdown("""
         border: 2px solid #fcc419 !important;
         color: #212529 !important;
         font-weight: 500;
+    }
+    /* Стили для жирной красной кнопки поиска */
+    div.stButton > button {
+        background-color: #e03131;
+        color: white;
+        border: none;
+        font-weight: bold;
+        font-size: 20px;
+        border-radius: 6px;
+        width: 100%;
+        margin-top: 27px;
+        height: 42px;
+    }
+    div.stButton > button:hover {
+        background-color: #c92a2a;
+        color: white;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -71,8 +87,25 @@ else:
                 'transit': transit_status
             })
 
-        # Поиск срабатывает мгновенно при вводе каждой буквы (без необходимости нажимать Enter)
-        query = st.text_input("🔍 Поиск товара:", "").strip().lower()
+        # Создаем строку поиска и рядом красную кнопку с жирной стрелкой
+        col_search, col_btn = st.columns([4, 1])
+        with col_search:
+            raw_query = st.text_input("🔍 Поиск товара:", "").strip()
+        with col_btn:
+            search_clicked = st.button("➔")
+
+        # Сохраняем запрос в сессии по нажатию кнопки со стрелкой
+        if "applied_query" not in st.session_state:
+            st.session_state["applied_query"] = ""
+
+        if search_clicked:
+            st.session_state["applied_query"] = raw_query
+
+        # Если строка поиска полностью пустая, сбрасываем фильтр
+        if not raw_query:
+            st.session_state["applied_query"] = ""
+
+        query = st.session_state["applied_query"].lower()
 
         filtered_data = []
         for p in products:
