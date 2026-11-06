@@ -18,11 +18,9 @@ if file_path is None:
     st.warning("⚠️ Файл с остатками пока не загружен в систему.")
 else:
     try:
-        # Автоматически получаем дату и время изменения файла в репозитории
         timestamp = os.path.getmtime(file_path)
         update_date = datetime.datetime.fromtimestamp(timestamp).strftime('%d.%m.%Y в %H:%M')
         
-        # Выводим дату обновления на экран
         st.info(f"📅 **Дата обновления отчета:** {update_date}")
 
         if file_path.endswith(".xlsx"):
@@ -37,9 +35,17 @@ else:
             name = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else str(row.iloc[1]).strip()
             if name == 'nan' or not name:
                 continue
+            
+            # Принудительно конвертируем остаток в число
+            raw_total = row.iloc[2]
+            try:
+                total_val = float(raw_total) if pd.notna(raw_total) else 0.0
+            except:
+                total_val = 0.0
+
             products.append({
                 'name': name,
-                'total': row.iloc[2] if pd.notna(row.iloc[2]) else 0
+                'total': total_val
             })
 
         query = st.text_input("🔍 Поиск товара:", "").strip().lower()
@@ -56,9 +62,11 @@ else:
 
         st.write(f"Найдено позиций: {len(result_df)}")
 
+        # Функция подсветки строк, где остаток строго больше 50
         def highlight_gt_50(row):
             try:
-                if float(row['Остаток']) > 50:
+                val = float(str(row['Остаток']).replace(',', '.'))
+                if val > 50:
                     return ['background-color: #fff3cd'] * len(row)
             except:
                 pass
