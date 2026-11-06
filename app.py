@@ -5,6 +5,18 @@ import datetime
 
 st.set_page_config(page_title="Учет Остатков — Art-Teksgroup", layout="centered")
 
+# Кастомный CSS для подсветки поля поиска желтоватым цветом
+st.markdown("""
+    <style>
+    input[aria-label="🔍 Поиск товара:"] {
+        background-color: #fff9db !important;
+        border: 2px solid #fcc419 !important;
+        color: #212529 !important;
+        font-weight: 500;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("📦 Остатки Art-Teksgroup SRL Moldova")
 st.markdown("📞 **Телефон для справок:** `079202099`")
 st.markdown("---")
@@ -59,6 +71,7 @@ else:
                 'transit': transit_status
             })
 
+        # Поиск срабатывает мгновенно при вводе каждой буквы (без необходимости нажимать Enter)
         query = st.text_input("🔍 Поиск товара:", "").strip().lower()
 
         filtered_data = []
@@ -66,7 +79,7 @@ else:
             if query in p['name'].lower():
                 val = p['total']
                 
-                # Форматирование остатка строго до 1 знака (без длинных нулей)
+                # Форматирование остатка строго до 1 знака (без лишних нулей)
                 if val > 50:
                     display_total = ">50"
                 elif val % 1 == 0:
@@ -74,7 +87,6 @@ else:
                 else:
                     display_total = f"{val:.1f}"
 
-                # Делаем статус жирным через Markdown-разметку для таблицы
                 display_status = f"**{p['transit']}**" if p['transit'] else ""
 
                 filtered_data.append({
@@ -96,11 +108,11 @@ else:
             try:
                 val = float(raw_vals[idx])
                 if val > 50:
-                    return ['background-color: #d4edda; color: #155724'] * len(row)
+                    return ['background-color: #d4edda; color: #155724'] * len(row)  # Зеленый (>50)
                 elif val < 10:
-                    return ['background-color: #f8d7da; color: #721c24'] * len(row)
+                    return ['background-color: #f8d7da; color: #721c24'] * len(row)  # Красный (<10)
                 else:
-                    return ['background-color: #fff3cd; color: #856404'] * len(row)
+                    return ['background-color: #fff3cd; color: #856404'] * len(row)  # Желтый (10-50)
             except:
                 pass
             return [''] * len(row)
