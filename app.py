@@ -66,10 +66,13 @@ else:
             if query in p['name'].lower():
                 val = p['total']
                 
+                # Форматирование остатка: >50 или округление до 1 знака
                 if val > 50:
                     display_total = ">50"
+                elif val % 1 == 0:
+                    display_total = int(val)
                 else:
-                    display_total = round(val, 2) if val % 1 != 0 else int(val)
+                    display_total = round(val, 1)
 
                 filtered_data.append({
                     "Остаток (метр/шт)": display_total,
