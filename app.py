@@ -36,7 +36,6 @@ else:
             if name == 'nan' or not name:
                 continue
             
-            # Принудительно конвертируем остаток в число
             raw_total = row.iloc[2]
             try:
                 total_val = float(raw_total) if pd.notna(raw_total) else 0.0
@@ -53,28 +52,22 @@ else:
         filtered_data = []
         for p in products:
             if query in p['name'].lower():
+                val = p['total']
+                # Если больше 50, пишем ">50", иначе показываем число (округляем до 2 знаков или целого)
+                if val > 50:
+                    display_total = ">50"
+                else:
+                    display_total = round(val, 2) if val % 1 != 0 else int(val)
+
                 filtered_data.append({
-                    "Остаток": p['total'],
+                    "Остаток": display_total,
                     "Наименование товара": p['name']
                 })
 
         result_df = pd.DataFrame(filtered_data)
 
         st.write(f"Найдено позиций: {len(result_df)}")
-
-        # Функция подсветки строк, где остаток строго больше 50
-        def highlight_gt_50(row):
-            try:
-                val = float(str(row['Остаток']).replace(',', '.'))
-                if val > 50:
-                    return ['background-color: #fff3cd'] * len(row)
-            except:
-                pass
-            return [''] * len(row)
-
-        styled_df = result_df.style.apply(highlight_gt_50, axis=1)
-
-        st.dataframe(styled_df, use_container_width=True, hide_index=True)
+        st.dataframe(result_df, use_container_width=True, hide_index=True)
 
     except Exception as e:
         st.error(f"Ошибка при чтении файла: {e}")
