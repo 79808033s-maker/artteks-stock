@@ -5,26 +5,45 @@ import datetime
 
 st.set_page_config(page_title="Учет Остатков — Art-Teksgroup", layout="centered")
 
-# Кастомный CSS для подсветки поля поиска и яркой красной кнопки со стрелкой
+# Кастомный CSS для красной плашки заголовка, поиска и компактной кнопки
 st.markdown("""
     <style>
+    /* Яркий красный фон для заголовка */
+    .custom-header {
+        background-color: #e03131;
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .header-title-1 {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .header-title-2 {
+        font-size: 26px;
+        font-weight: bold;
+    }
+    /* Подсветка поля поиска желтоватым цветом */
     input[aria-label="🔍 Поиск товара:"] {
         background-color: #fff9db !important;
         border: 2px solid #fcc419 !important;
         color: #212529 !important;
         font-weight: 500;
     }
-    /* Стили для жирной красной кнопки поиска */
+    /* Стили для компактной красной кнопки поиска в конце строки */
     div.stButton > button {
         background-color: #e03131;
         color: white;
         border: none;
         font-weight: bold;
-        font-size: 20px;
+        font-size: 18px;
         border-radius: 6px;
         width: 100%;
         margin-top: 27px;
-        height: 42px;
+        height: 38px;
     }
     div.stButton > button:hover {
         background-color: #c92a2a;
@@ -33,8 +52,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("📦 Остатки Art-Teksgroup SRL Moldova")
-st.markdown("📞 **Телефон для справок:** `079202099`")
+# Красный блок заголовка в две строки
+st.markdown("""
+    <div class="custom-header">
+        <div class="header-title-1">📦 Остатки</div>
+        <div class="header-title-2">Art-Teksgroup SRL Moldova</div>
+    </div>
+""", unsafe_allow_html=True)
+
+st.markdown("<p style='text-align: center; font-size: 16px; font-weight: bold;'>📞 Телефон для справок: <code>079202099</code></p>", unsafe_allow_html=True)
 st.markdown("---")
 
 file_path = None
@@ -87,21 +113,19 @@ else:
                 'transit': transit_status
             })
 
-        # Создаем строку поиска и рядом красную кнопку с жирной стрелкой
-        col_search, col_btn = st.columns([4, 1])
+        # Поле поиска и кнопка со стрелкой вплотную друг к другу
+        col_search, col_btn = st.columns([5, 1])
         with col_search:
             raw_query = st.text_input("🔍 Поиск товара:", "").strip()
         with col_btn:
             search_clicked = st.button("➔")
 
-        # Сохраняем запрос в сессии по нажатию кнопки со стрелкой
         if "applied_query" not in st.session_state:
             st.session_state["applied_query"] = ""
 
         if search_clicked:
             st.session_state["applied_query"] = raw_query
 
-        # Если строка поиска полностью пустая, сбрасываем фильтр
         if not raw_query:
             st.session_state["applied_query"] = ""
 
