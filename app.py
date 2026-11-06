@@ -1,16 +1,15 @@
 import streamlit as st
 import pandas as pd
 import os
+import datetime
 
-st.set_page_config(page_title="Учет Остатков — Артекс", layout="centered")
+st.set_page_config(page_title="Учет Остатков — Art-Teksgroup", layout="centered")
 
-st.title("📦 Общие остатки товаров")
+st.title("📦 Остатки Art-Teksgroup SRL Moldova")
 
-# Ищем файл отчета прямо в репозитории (поддерживает и .xlsx, и .xls)
 file_path = None
 for filename in os.listdir("."):
     if filename.endswith(".xlsx") or filename.endswith(".xls"):
-        # Исключаем служебные файлы, если есть
         if not filename.startswith("~$"):
             file_path = filename
             break
@@ -19,13 +18,18 @@ if file_path is None:
     st.warning("⚠️ Файл с остатками пока не загружен в систему.")
 else:
     try:
-        # Читаем файл в зависимости от его формата
+        # Автоматически получаем дату и время изменения файла в репозитории
+        timestamp = os.path.getmtime(file_path)
+        update_date = datetime.datetime.fromtimestamp(timestamp).strftime('%d.%m.%Y в %H:%M')
+        
+        # Выводим дату обновления на экран
+        st.info(f"📅 **Дата обновления отчета:** {update_date}")
+
         if file_path.endswith(".xlsx"):
             df = pd.read_excel(file_path, sheet_name=0, header=None, engine='openpyxl')
         else:
             df = pd.read_excel(file_path, sheet_name=0, header=None, engine='xlrd')
 
-        # Обработка данных вашей таблицы 1С
         products = []
         for index, row in df.iterrows():
             if index < 11:
@@ -38,7 +42,6 @@ else:
                 'total': row.iloc[2] if pd.notna(row.iloc[2]) else 0
             })
 
-        # Строка поиска для сотрудников
         query = st.text_input("🔍 Поиск товара:", "").strip().lower()
 
         filtered_data = []
@@ -51,9 +54,19 @@ else:
 
         result_df = pd.DataFrame(filtered_data)
 
-        # Выводим таблицу только для просмотра (без каких-либо кнопок скачивания)
         st.write(f"Найдено позиций: {len(result_df)}")
-        st.dataframe(result_df, use_container_width=True, hide_index=True)
+
+        def highlight_gt_50(row):
+            try:
+                if float(row['Остаток']) > 50:
+                    return ['background-color: #fff3cd'] * len(row)
+            except:
+                pass
+            return [''] * len(row)
+
+        styled_df = result_df.style.apply(highlight_gt_50, axis=1)
+
+        st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
     except Exception as e:
         st.error(f"Ошибка при чтении файла: {e}")
