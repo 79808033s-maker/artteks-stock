@@ -32,21 +32,19 @@ else:
 
         products = []
         for index, row in df.iterrows():
-            if index < 12:  # Шапка отчета
+            if index < 12:
                 continue
             
             name = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
             if not name or name == 'nan' or name.lower().startswith('всего'):
                 continue
             
-            # Остаток товара (колонка 8)
             raw_total = row.iloc[8]
             try:
                 total_val = float(raw_total) if pd.notna(raw_total) else 0.0
             except:
                 total_val = 0.0
 
-            # В пути (колонка 10)
             raw_transit = row.iloc[10]
             has_transit = False
             try:
@@ -68,13 +66,11 @@ else:
             if query in p['name'].lower():
                 val = p['total']
                 
-                # Форматирование остатка
                 if val > 50:
                     display_total = ">50"
                 else:
                     display_total = round(val, 2) if val % 1 != 0 else int(val)
 
-                # Добавляем примечание "в пути" без цифр
                 display_name = p['name']
                 if p['has_transit']:
                     display_name = f"{p['name']} (в пути)"
@@ -89,21 +85,19 @@ else:
 
         st.write(f"Найдено позиций: {len(result_df)}")
 
-        # Убираем техническую колонку ДО применения стилей
         display_df = result_df[["Остаток (метр/шт)", "Наименование товара"]].copy()
         raw_vals = result_df["_raw_val"].tolist()
 
-        # Функция для подсветки строк по индексам
         def color_rows(row):
             idx = row.name
             try:
                 val = float(raw_vals[idx])
                 if val > 50:
-                    return ['background-color: #d4edda'] * len(row)  # Зеленый (>50)
+                    return ['background-color: #d4edda; color: #155724'] * len(row)  # Зеленый
                 elif val < 10:
-                    return ['background-color: #f8d7da'] * len(row)  # Красный (<10)
+                    return ['background-color: #f8d7da; color: #721c24'] * len(row)  # Красный
                 else:
-                    return ['background-color: #fff3cd'] * len(row)  # Желтый (от 10 до 50)
+                    return ['background-color: #fff3cd; color: #856404'] * len(row)  # Желтый
             except:
                 pass
             return [''] * len(row)
