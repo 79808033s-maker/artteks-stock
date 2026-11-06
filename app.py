@@ -32,7 +32,7 @@ else:
 
         products = []
         for index, row in df.iterrows():
-            if index < 12:  # В новом отчете шапка таблицы заканчивается на 11 строке
+            if index < 12:  # Шапка отчета
                 continue
             
             name = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
@@ -48,17 +48,17 @@ else:
 
             # В пути (колонка 10)
             raw_transit = row.iloc[10]
-            transit_val = None
+            has_transit = False
             try:
                 if pd.notna(raw_transit) and float(raw_transit) > 0:
-                    transit_val = float(raw_transit)
+                    has_transit = True
             except:
                 pass
 
             products.append({
                 'name': name,
                 'total': total_val,
-                'transit': transit_val
+                'has_transit': has_transit
             })
 
         query = st.text_input("🔍 Поиск товара:", "").strip().lower()
@@ -74,11 +74,10 @@ else:
                 else:
                     display_total = round(val, 2) if val % 1 != 0 else int(val)
 
-                # Добавляем примечание "в пути", если значение есть
+                # Добавляем примечание "в пути" без цифр, если значение есть
                 display_name = p['name']
-                if p['transit'] is not None:
-                    t_formatted = round(p['transit'], 2) if p['transit'] % 1 != 0 else int(p['transit'])
-                    display_name = f"{p['name']} (в пути: {t_formatted})"
+                if p['has_transit']:
+                    display_name = f"{p['name']} (в пути)"
 
                 filtered_data.append({
                     "Остаток (метр/шт)": display_total,
@@ -95,11 +94,11 @@ else:
             try:
                 val = float(result_df.loc[row_index, '_raw_val'])
                 if val > 50:
-                    return ['background-color: #d4edda'] * len(result_df.columns)  # Зеленый
+                    return ['background-color: #d4edda'] * len(result_df.columns)  # Зеленый (>50)
                 elif val < 10:
-                    return ['background-color: #f8d7da'] * len(result_df.columns)  # Красный
+                    return ['background-color: #f8d7da'] * len(result_df.columns)  # Красный (<10)
                 else:
-                    return ['background-color: #fff3cd'] * len(result_df.columns)  # Желтый
+                    return ['background-color: #fff3cd'] * len(result_df.columns)  # Желтый (от 10 до 50)
             except:
                 pass
             return [''] * len(result_df.columns)
