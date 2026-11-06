@@ -54,37 +54,34 @@ else:
             if query in p['name'].lower():
                 val = p['total']
                 
-                # Форматирование отображения остатка
                 if val > 50:
                     display_total = ">50"
                 else:
                     display_total = round(val, 2) if val % 1 != 0 else int(val)
 
                 filtered_data.append({
-                    "Остаток": display_total,
+                    "Остаток (метр/шт)": display_total,
                     "Наименование товара": p['name'],
-                    "_raw_val": val  # тех. поле для точной цветовой логики
+                    "_raw_val": val
                 })
 
         result_df = pd.DataFrame(filtered_data)
 
         st.write(f"Найдено позиций: {len(result_df)}")
 
-        # Функция для раскраски строк в зависимости от остатка
         def color_rows(row):
             try:
                 val = float(row['_raw_val'])
                 if val > 50:
-                    return ['background-color: #d4edda'] * len(row)  # Зеленый (пастельный)
+                    return ['background-color: #d4edda'] * len(row)  # Зеленый
                 elif val < 10:
-                    return ['background-color: #f8d7da'] * len(row)  # Красный (пастельный)
+                    return ['background-color: #f8d7da'] * len(row)  # Красный
                 else:
-                    return ['background-color: #fff3cd'] * len(row)  # Желтый (пастельный)
+                    return ['background-color: #fff3cd'] * len(row)  # Желтый
             except:
                 pass
             return [''] * len(row)
 
-        # Применяем стили и скрываем техническую колонку
         styled_df = result_df.style.apply(color_rows, axis=1).hide(subset=["_raw_val"], axis="columns")
 
         st.dataframe(styled_df, use_container_width=True, hide_index=True)
