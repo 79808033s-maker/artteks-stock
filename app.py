@@ -3,19 +3,20 @@ import pandas as pd
 import os
 import datetime
 
-# Настройка красивой шапки браузера (вкладки)
+# Настройка вкладки браузера
 st.set_page_config(
     page_title="Остатки Art-Teksgroup SRL",
     page_icon="📦",
     layout="centered"
 )
 
-# Внедрение мета-тегов для красивого отображения ссылки при отправке в мессенджеры
+# Красивое оформление мета-тегов для превью в WhatsApp, Viber и Telegram
 st.markdown("""
     <head>
         <meta property="og:title" content="Остатки Art-Teksgroup SRL Moldova">
-        <meta property="og:description" content="Актуальный учет остатков и статусов товаров. Телефон: 079202099">
+        <meta property="og:description" content="Актуальный складской учет тканей, фурнитуры и статусов товаров в пути. Телефон: 079202099">
         <meta property="og:type" content="website">
+        <meta property="og:site_name" content="Art-Teksgroup">
     </head>
     <style>
     /* Яркий красный фон для заголовка */
