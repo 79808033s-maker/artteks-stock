@@ -71,22 +71,28 @@ else:
 
         st.write(f"Найдено позиций: {len(result_df)}")
 
-        def color_rows(row):
+        # Функция для подсветки строк по значению _raw_val
+        def color_rows(row_index):
             try:
-                val = float(row['_raw_val'])
+                val = float(result_df.loc[row_index, '_raw_val'])
                 if val > 50:
-                    return ['background-color: #d4edda'] * len(row)  # Зеленый
+                    return ['background-color: #d4edda'] * len(result_df.columns)  # Зеленый
                 elif val < 10:
-                    return ['background-color: #f8d7da'] * len(row)  # Красный
+                    return ['background-color: #f8d7da'] * len(result_df.columns)  # Красный
                 else:
-                    return ['background-color: #fff3cd'] * len(row)  # Желтый
+                    return ['background-color: #fff3cd'] * len(result_df.columns)  # Желтый
             except:
                 pass
-            return [''] * len(row)
+            return [''] * len(result_df.columns)
 
-        styled_df = result_df.style.apply(color_rows, axis=1).hide(subset=["_raw_val"], axis="columns")
+        # Удаляем техническую колонку ДО применения стилей и отображения
+        display_df = result_df.drop(columns=["_raw_val"])
+        
+        # Красим строки на основе исходного датафрейма
+        styled_df = display_df.style.apply(lambda row: color_rows(row.name), axis=1)
 
         st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
     except Exception as e:
         st.error(f"Ошибка при чтении файла: {e}")
+        
