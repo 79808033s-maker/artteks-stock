@@ -32,21 +32,33 @@ else:
 
         products = []
         for index, row in df.iterrows():
-            if index < 11:
-                continue
-            name = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else str(row.iloc[1]).strip()
-            if name == 'nan' or not name:
+            if index < 12:  # В новом отчете шапка таблицы заканчивается на 11 строке
                 continue
             
-            raw_total = row.iloc[2]
+            name = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
+            if not name or name == 'nan' or name.lower().startswith('всего'):
+                continue
+            
+            # Остаток товара (колонка 8)
+            raw_total = row.iloc[8]
             try:
                 total_val = float(raw_total) if pd.notna(raw_total) else 0.0
             except:
                 total_val = 0.0
 
+            # В пути (колонка 10)
+            raw_transit = row.iloc[10]
+            transit_val = None
+            try:
+                if pd.notna(raw_transit) and float(raw_transit) > 0:
+                    transit_val = float(raw_transit)
+            except:
+                pass
+
             products.append({
                 'name': name,
-                'total': total_val
+                'total': total_val,
+                'transit': transit_val
             })
 
         query = st.text_input("🔍 Поиск товара:", "").strip().lower()
@@ -56,22 +68,46 @@ else:
             if query in p['name'].lower():
                 val = p['total']
                 
+                # Форматирование остатка
                 if val > 50:
                     display_total = ">50"
                 else:
                     display_total = round(val, 2) if val % 1 != 0 else int(val)
 
+                # Добавляем примечание "в пути", если значение есть
+                display_name = p['name']
+                if p['transit'] is not None:
+                    t_formatted = round(p['transit'], 2) if p['transit'] % 1 != 0 else int(p['transit'])
+                    display_name = f"{p['name']} (в пути: {t_formatted})"
+
                 filtered_data.append({
                     "Остаток (метр/шт)": display_total,
-                    "Наименование товара": p['name']
+                    "Наименование товара": display_name,
+                    "_raw_val": val
                 })
 
         result_df = pd.DataFrame(filtered_data)
 
         st.write(f"Найдено позиций: {len(result_df)}")
 
-        # Выводим чистую таблицу без лишних технических колонок и ошибок
-        st.dataframe(result_df, use_container_width=True, hide_index=True)
+        # Функция для подсветки строк
+        def color_rows(row_index):
+            try:
+                val = float(result_df.loc[row_index, '_raw_val'])
+                if val > 50:
+                    return ['background-color: #d4edda'] * len(result_df.columns)  # Зеленый
+                elif val < 10:
+                    return ['background-color: #f8d7da'] * len(result_df.columns)  # Красный
+                else:
+                    return ['background-color: #fff3cd'] * len(result_df.columns)  # Желтый
+            except:
+                pass
+            return [''] * len(result_df.columns)
+
+        display_df = result_df.drop(columns=["_raw_val"])
+        styled_df = display_df.style.apply(lambda row: color_rows(row.name), axis=1)
+
+        st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
     except Exception as e:
         st.error(f"Ошибка при чтении файла: {e}")
