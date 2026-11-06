@@ -95,4 +95,3 @@ else:
 
     except Exception as e:
         st.error(f"Ошибка при чтении файла: {e}")
-        
