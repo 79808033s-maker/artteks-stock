@@ -95,11 +95,11 @@ else:
         else:
             df = pd.read_excel(file_path, sheet_name=0, header=None, engine='xlrd')
 
-        # Динамически определяем колонки в пути из строк 0 и 1
+        # Динамически определяем колонки в пути из строки 0
         transit_columns = []
-        if len(df) > 1:
+        if len(df) > 0:
             row_0 = df.iloc[0]
-            for col_idx in range(4, len(row_0)):
+            for col_idx in range(3, len(row_0)):
                 header_text = str(row_0.iloc[col_idx])
                 if "пути" in header_text.lower() or "приб" in header_text.lower():
                     label = header_text.replace('\n', ' ')
@@ -117,20 +117,20 @@ else:
 
         products = []
         for index, row in df.iterrows():
-            if index < 3: # Пропускаем шапки таблицы
+            if index < 2: # Пропускаем строки заголовка таблицы
                 continue
             
             name = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
             if not name or name == 'nan' or name.lower().startswith('всего'):
                 continue
             
-            raw_total = row.iloc[3] # Свободный остаток в 3 колонке
+            raw_total = row.iloc[2] # Свободный остаток в 2-й индексной колонке (3-я колонка Excel)
             try:
                 total_val = float(raw_total) if pd.notna(raw_total) else 0.0
             except:
                 total_val = 0.0
 
-            # Проверяем наличие в пути
+            # Проверяем наличие в пути по всем найденным колонкам контейнеров
             transit_notes = []
             for t_col in transit_columns:
                 try:
@@ -174,12 +174,14 @@ else:
                 # Форматирование остатка строго до 1 знака (без лишних нулей)
                 if val > 50:
                     display_total = ">50"
+                elif val == 0 or pd.isna(val):
+                    display_total = "0"
                 elif val % 1 == 0:
                     display_total = int(val)
                 else:
                     display_total = f"{val:.1f}"
 
-                # Объединяем название и дату прибытия прямо в одно поле для удобства на телефоне
+                # Компактное отображение названия вместе с датой прибытия для мобильных
                 full_name_display = p['name']
                 if p['transit']:
                     full_name_display = f"{p['name']} (🚚 {p['transit']})"
