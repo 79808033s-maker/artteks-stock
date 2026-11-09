@@ -148,16 +148,23 @@ else:
                 'transit': transit_status
             })
 
-        # Помечаем строки-шапки коллекций
+        # Помечаем строки-шапки коллекций (если за ними идут цвета этой же коллекции ИЛИ название является общим заголовком)
         processed_products = []
         for i, p in enumerate(products):
             name_upper = p['name'].upper()
             is_header = False
+            
+            # Признак 1: Следующая строка начинается с этого же слова (например, "ROYAL" -> "Royal Grey")
             if i + 1 < len(products):
                 next_name = products[i+1]['name'].upper()
                 if next_name.startswith(name_upper) and len(next_name) > len(name_upper):
                     is_header = True
             
+            # Признак 2: Название состоит только из имени коллекции и альтернативного названия в скобках (например, "ROYAL (Ronda)" или "CITY/CITARA") без указания цвета
+            if "(" in p['name'] and ")" in p['name'] and not any(color_word in name_upper for color_word in ['BROWN', 'GREY', 'BEIGE', 'BLACK', 'WHITE', 'BLUE', 'RED', 'GREEN', 'NUDE', 'SNOW', 'BONE', 'SILVER', 'GOLD', 'CREAM', 'IVORY', 'LATTE', 'COCOA', 'MAUVE', 'OCEAN', 'STONE']):
+                # Проверяем, что это не конкретный цвет с названием в скобках
+                is_header = True
+
             processed_products.append({
                 'name': p['name'],
                 'total': p['total'] if not is_header else None,
