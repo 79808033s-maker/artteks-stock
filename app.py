@@ -14,7 +14,7 @@ st.set_page_config(
 st.markdown("""
     <head>
         <meta property="og:title" content="Остатки Art-Teksgroup SRL Moldova">
-        <meta property="og:description" content="Актуальный складской учет тканей, фурнитуры и статусов товаров в пути. Телефон: 079202099">
+        <meta property="og:description" content="Актуальный складской учет тканей, фурнитуры и статусов товаров в пути с датами прибытия. Телефон: 079202099">
         <meta property="og:type" content="website">
         <meta property="og:site_name" content="Art-Teksgroup">
     </head>
@@ -95,28 +95,53 @@ else:
         else:
             df = pd.read_excel(file_path, sheet_name=0, header=None, engine='xlrd')
 
+        # Динамически определяем колонки в пути из строк 0 и 1
+        transit_columns = []
+        if len(df) > 1:
+            row_0 = df.iloc[0]
+            for col_idx in range(4, len(row_0)):
+                header_text = str(row_0.iloc[col_idx])
+                if "пути" in header_text.lower() or "приб" in header_text.lower():
+                    # Извлекаем дату прибытия для красоты (например, если есть "Приб. 29.11.26")
+                    label = header_text.replace('\n', ' ')
+                    if "Приб." in label:
+                        label = label.split("Приб.")[-1].strip()
+                    elif "приб" in label.lower():
+                        label = label.split("приб")[-1].strip()
+                    else:
+                        label = "В пути"
+                    
+                    transit_columns.append({
+                        'col_idx': col_idx,
+                        'label': f"Приб. {label}" if not label.startswith("Приб") else label
+                    })
+
         products = []
         for index, row in df.iterrows():
-            if index < 12:
+            if index < 3: # Пропускаем шапки таблицы
                 continue
             
             name = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
             if not name or name == 'nan' or name.lower().startswith('всего'):
                 continue
             
-            raw_total = row.iloc[8]
+            raw_total = row.iloc[3] # Свободный остаток теперь в 3 колонке
             try:
                 total_val = float(raw_total) if pd.notna(raw_total) else 0.0
             except:
                 total_val = 0.0
 
-            raw_transit = row.iloc[10]
-            transit_status = ""
-            try:
-                if pd.notna(raw_transit) and float(raw_transit) > 0:
-                    transit_status = "В пути"
-            except:
-                pass
+            # Проверяем все найденные колонки "в пути" для этого товара
+            transit_notes = []
+            for t_col in transit_columns:
+                try:
+                    val_transit = row.iloc[t_col['col_idx']]
+                    if pd.notna(val_transit) and float(val_transit) > 0:
+                        transit_notes.append(t_col['label'])
+                except:
+                    pass
+
+            transit_status = ", ".join(transit_notes) if transit_notes else ""
 
             products.append({
                 'name': name,
