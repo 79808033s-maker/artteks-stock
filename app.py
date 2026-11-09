@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Красивое оформление мета-тегов для превью в WhatsApp, Viber и Telegram
+# Красивое оформление мета-тегов и CSS для мобильных
 st.markdown("""
     <head>
         <meta property="og:title" content="Остатки Art-Teksgroup SRL Moldova">
@@ -59,6 +59,10 @@ st.markdown("""
     div.stButton > button:hover {
         background-color: #c92a2a;
         color: white;
+    }
+    /* Делаем таблицу компактной на мобильных */
+    [data-testid="stDataFrame"] {
+        font-size: 14px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -150,8 +154,7 @@ else:
                 'transit': transit_status
             })
 
-        # Точное определение шапок коллекций:
-        # Шапка коллекции — это строка, за которой сразу идет элемент с номером 1 в первой колонке (col0 == 1)
+        # Определение шапок коллекций
         processed_products = []
         for i, p in enumerate(raw_products):
             is_header = False
@@ -242,7 +245,16 @@ else:
 
         styled_df = display_df.style.apply(color_rows, axis=1)
 
-        st.dataframe(styled_df, use_container_width=True, hide_index=True)
+        # Выводим таблицу с фиксированной узкой шириной первой колонки
+        st.dataframe(
+            styled_df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Остаток": st.column_config.TextColumn("Остаток", width="small"),
+                "Наименование товара": st.column_config.TextColumn("Наименование товара", width="large")
+            }
+        )
 
     except Exception as e:
         st.error(f"Ошибка при чтении файла: {e}")
