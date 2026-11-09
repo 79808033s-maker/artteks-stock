@@ -115,22 +115,23 @@ else:
                         'label': f"Приб. {label}" if not label.startswith("Приб") else label
                     })
 
-        products = []
+        raw_products = []
         for index, row in df.iterrows():
-            if index < 2: # Пропускаем строки заголовка таблицы
+            if index < 2: # Пропускаем заголовки
                 continue
             
             name = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
             if not name or name == 'nan' or name.lower().startswith('всего'):
                 continue
             
-            raw_total = row.iloc[2] # Свободный остаток в 3-й колонке
+            col0_val = row.iloc[0]
+            raw_total = row.iloc[2] # Свободный остаток
             try:
                 total_val = float(raw_total) if pd.notna(raw_total) else 0.0
             except:
                 total_val = 0.0
 
-            # Проверяем наличие в пути по всем найденным колонкам контейнеров
+            # Проверяем наличие в пути
             transit_notes = []
             for t_col in transit_columns:
                 try:
@@ -142,28 +143,26 @@ else:
 
             transit_status = ", ".join(transit_notes) if transit_notes else ""
 
-            products.append({
+            raw_products.append({
                 'name': name,
+                'col0': col0_val,
                 'total': total_val,
                 'transit': transit_status
             })
 
-        # Помечаем строки-шапки коллекций (если за ними идут цвета этой же коллекции ИЛИ название является общим заголовком)
+        # Точное определение шапок коллекций:
+        # Шапка коллекции — это строка, за которой сразу идет элемент с номером 1 в первой колонке (col0 == 1)
         processed_products = []
-        for i, p in enumerate(products):
-            name_upper = p['name'].upper()
+        for i, p in enumerate(raw_products):
             is_header = False
             
-            # Признак 1: Следующая строка начинается с этого же слова (например, "ROYAL" -> "Royal Grey")
-            if i + 1 < len(products):
-                next_name = products[i+1]['name'].upper()
-                if next_name.startswith(name_upper) and len(next_name) > len(name_upper):
-                    is_header = True
-            
-            # Признак 2: Название состоит только из имени коллекции и альтернативного названия в скобках (например, "ROYAL (Ronda)" или "CITY/CITARA") без указания цвета
-            if "(" in p['name'] and ")" in p['name'] and not any(color_word in name_upper for color_word in ['BROWN', 'GREY', 'BEIGE', 'BLACK', 'WHITE', 'BLUE', 'RED', 'GREEN', 'NUDE', 'SNOW', 'BONE', 'SILVER', 'GOLD', 'CREAM', 'IVORY', 'LATTE', 'COCOA', 'MAUVE', 'OCEAN', 'STONE']):
-                # Проверяем, что это не конкретный цвет с названием в скобках
-                is_header = True
+            if i + 1 < len(raw_products):
+                next_col0 = raw_products[i+1]['col0']
+                try:
+                    if float(next_col0) == 1.0:
+                        is_header = True
+                except:
+                    pass
 
             processed_products.append({
                 'name': p['name'],
