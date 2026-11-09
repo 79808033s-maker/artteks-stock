@@ -142,12 +142,6 @@ else:
 
             transit_status = ", ".join(transit_notes) if transit_notes else ""
 
-            # Определяем, является ли строка общей шапкой коллекции (без конкретного цвета)
-            # Шапки коллекций идут перед своими цветами (например, следующая строка начинается с этого же имени)
-            is_collection_header = False
-            # Проверим, есть ли следующая строка и начинается ли она с нашего названия
-            # (также можно проверить по отсутствию пробелов или характерному виду)
-            
             products.append({
                 'name': name,
                 'total': total_val,
@@ -166,8 +160,8 @@ else:
             
             processed_products.append({
                 'name': p['name'],
-                'total': p['total'] if not is_header else None,  # У шапок убираем остаток
-                'transit': "" if is_header else p['transit'],    # У шапок убираем статус в пути
+                'total': p['total'] if not is_header else None,
+                'transit': "" if is_header else p['transit'],
                 'is_header': is_header
             })
 
@@ -196,7 +190,7 @@ else:
                 
                 if p['is_header']:
                     display_total = ""
-                    full_name_display = f"🔹 **{p['name']}**"  выделяем шапку коллекции жирным
+                    full_name_display = f"🔹 **{p['name']}**"
                 else:
                     if val is None or pd.isna(val) or val == 0:
                         display_total = "0"
@@ -229,13 +223,13 @@ else:
             try:
                 val = float(raw_vals[idx])
                 if val == -1:
-                    return ['background-color: #e9ecef; color: #495057; font-weight: bold;'] * len(row) # Серый фон для шапки коллекции
+                    return ['background-color: #e9ecef; color: #495057; font-weight: bold;'] * len(row)
                 elif val > 50:
-                    return ['background-color: #d4edda; color: #155724'] * len(row)  # Зеленый (>50)
+                    return ['background-color: #d4edda; color: #155724'] * len(row)
                 elif val < 10:
-                    return ['background-color: #f8d7da; color: #721c24'] * len(row)  # Красный (<10)
+                    return ['background-color: #f8d7da; color: #721c24'] * len(row)
                 else:
-                    return ['background-color: #fff3cd; color: #856404'] * len(row)  # Желтый (10-50)
+                    return ['background-color: #fff3cd; color: #856404'] * len(row)
             except:
                 pass
             return [''] * len(row)
