@@ -124,15 +124,6 @@ else:
             if not name or name == 'nan' or name.lower().startswith('всего'):
                 continue
             
-            # Определяем, является ли строка общей шапкой коллекции (без конкретного цвета)
-            # У шапок коллекций название обычно состоит только из названия самой коллекции (например, PALAZZO или ALLURE PREMIUM)
-            # Простые цвета всегда содержат дополнительные слова или маркеры.
-            # Мы можем отсечь строки, которые не содержат пробелов (кроме скобок) или совпадают с общими заголовками.
-            # Для надежности: если имя короткое и состоит из 1-2 слов без указания оттенка/цвета, либо идет перед списком оттенков.
-            # В данном прайсе у шапок коллекций в колонке № п/п (col 0) стоит сквозной номер или они идут первыми. 
-            # Проверим: если в строке нет специфичных для цвета слов и это не цвет — пропускаем.
-            # Точный признак: строки-коллекции в этом файле идут перед своими цветами.
-            
             raw_total = row.iloc[2] # Свободный остаток в 3-й колонке
             try:
                 total_val = float(raw_total) if pd.notna(raw_total) else 0.0
@@ -151,30 +142,34 @@ else:
 
             transit_status = ", ".join(transit_notes) if transit_notes else ""
 
+            # Определяем, является ли строка общей шапкой коллекции (без конкретного цвета)
+            # Шапки коллекций идут перед своими цветами (например, следующая строка начинается с этого же имени)
+            is_collection_header = False
+            # Проверим, есть ли следующая строка и начинается ли она с нашего названия
+            # (также можно проверить по отсутствию пробелов или характерному виду)
+            
             products.append({
                 'name': name,
                 'total': total_val,
-                'transit': transit_status,
-                'row_idx': index
+                'transit': transit_status
             })
 
-        # Фильтруем общие строки-шапки коллекций (у них нет конкретного цвета, они суммарные)
-        # В файле Excel шапки коллекций идут перед цветами и часто не имеют уточняющих слов цвета (вроде Brown, Grey, Nude и т.д.)
-        # Проверим следующие строки: если текущая строка является названием коллекции для последующих строк, исключаем её.
-        cleaned_products = []
+        # Помечаем строки-шапки коллекций
+        processed_products = []
         for i, p in enumerate(products):
             name_upper = p['name'].upper()
-            # Проверяем, является ли это общим заголовком коллекции (например, "TOPAZ", "ALLURE PREMIUM", "PALAZZO (Piazzo)")
-            # Обычно у них нет слова цвета, а следующие строки содержат это же название с добавлением цвета.
-            is_collection_header = False
-            # Если это строка типа "TOPAZ" или "ALLURE", проверим следующие 2-3 позиции
+            is_header = False
             if i + 1 < len(products):
                 next_name = products[i+1]['name'].upper()
                 if next_name.startswith(name_upper) and len(next_name) > len(name_upper):
-                    is_collection_header = True
+                    is_header = True
             
-            if not is_collection_header:
-                cleaned_products.append(p)
+            processed_products.append({
+                'name': p['name'],
+                'total': p['total'] if not is_header else None,  # У шапок убираем остаток
+                'transit': "" if is_header else p['transit'],    # У шапок убираем статус в пути
+                'is_header': is_header
+            })
 
         # Поле поиска и кнопка со стрелкой вплотную друг к другу
         col_search, col_btn = st.columns([5, 1])
@@ -195,29 +190,31 @@ else:
         query = st.session_state["applied_query"].lower()
 
         filtered_data = []
-        for p in cleaned_products:
+        for p in processed_products:
             if query in p['name'].lower():
                 val = p['total']
                 
-                # Форматирование остатка строго до 1 знака (без лишних нулей)
-                if val > 50:
-                    display_total = ">50"
-                elif val == 0 or pd.isna(val):
-                    display_total = "0"
-                elif val % 1 == 0:
-                    display_total = int(val)
+                if p['is_header']:
+                    display_total = ""
+                    full_name_display = f"🔹 **{p['name']}**"  выделяем шапку коллекции жирным
                 else:
-                    display_total = f"{val:.1f}"
+                    if val is None or pd.isna(val) or val == 0:
+                        display_total = "0"
+                    elif val > 50:
+                        display_total = ">50"
+                    elif val % 1 == 0:
+                        display_total = int(val)
+                    else:
+                        display_total = f"{val:.1f}"
 
-                # Компактное отображение названия вместе с датой прибытия для мобильных
-                full_name_display = p['name']
-                if p['transit']:
-                    full_name_display = f"{p['name']} (🚚 {p['transit']})"
+                    full_name_display = p['name']
+                    if p['transit']:
+                        full_name_display = f"{p['name']} (🚚 {p['transit']})"
 
                 filtered_data.append({
                     "Остаток": display_total,
                     "Наименование товара": full_name_display,
-                    "_raw_val": val
+                    "_raw_val": val if not p['is_header'] else -1
                 })
 
         result_df = pd.DataFrame(filtered_data)
@@ -231,7 +228,9 @@ else:
             idx = row.name
             try:
                 val = float(raw_vals[idx])
-                if val > 50:
+                if val == -1:
+                    return ['background-color: #e9ecef; color: #495057; font-weight: bold;'] * len(row) # Серый фон для шапки коллекции
+                elif val > 50:
                     return ['background-color: #d4edda; color: #155724'] * len(row)  # Зеленый (>50)
                 elif val < 10:
                     return ['background-color: #f8d7da; color: #721c24'] * len(row)  # Красный (<10)
