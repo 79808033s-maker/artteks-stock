@@ -14,7 +14,7 @@ st.set_page_config(
 st.markdown("""
     <head>
         <meta property="og:title" content="Остатки Art-Teksgroup SRL Moldova">
-        <meta property="og:description" content="Актуальный складской учет тканей, фурнитуры и статусов товаров в пути с датами прибытия. Телефон: 079202099">
+        <meta property="og:description" content="Актуальный складской учет тканей и дат прибытия в пути. Телефон: 079202099">
         <meta property="og:type" content="website">
         <meta property="og:site_name" content="Art-Teksgroup">
     </head>
@@ -102,7 +102,6 @@ else:
             for col_idx in range(4, len(row_0)):
                 header_text = str(row_0.iloc[col_idx])
                 if "пути" in header_text.lower() or "приб" in header_text.lower():
-                    # Извлекаем дату прибытия для красоты (например, если есть "Приб. 29.11.26")
                     label = header_text.replace('\n', ' ')
                     if "Приб." in label:
                         label = label.split("Приб.")[-1].strip()
@@ -125,13 +124,13 @@ else:
             if not name or name == 'nan' or name.lower().startswith('всего'):
                 continue
             
-            raw_total = row.iloc[3] # Свободный остаток теперь в 3 колонке
+            raw_total = row.iloc[3] # Свободный остаток в 3 колонке
             try:
                 total_val = float(raw_total) if pd.notna(raw_total) else 0.0
             except:
                 total_val = 0.0
 
-            # Проверяем все найденные колонки "в пути" для этого товара
+            # Проверяем наличие в пути
             transit_notes = []
             for t_col in transit_columns:
                 try:
@@ -180,12 +179,14 @@ else:
                 else:
                     display_total = f"{val:.1f}"
 
-                display_status = f"**{p['transit']}**" if p['transit'] else ""
+                # Объединяем название и дату прибытия прямо в одно поле для удобства на телефоне
+                full_name_display = p['name']
+                if p['transit']:
+                    full_name_display = f"{p['name']} (🚚 {p['transit']})"
 
                 filtered_data.append({
-                    "Остаток (метр/шт)": display_total,
-                    "Наименование товара": p['name'],
-                    "Статус": display_status,
+                    "Остаток": display_total,
+                    "Наименование товара": full_name_display,
                     "_raw_val": val
                 })
 
@@ -193,7 +194,7 @@ else:
 
         st.write(f"Найдено позиций: {len(result_df)}")
 
-        display_df = result_df[["Остаток (метр/шт)", "Наименование товара", "Статус"]].copy()
+        display_df = result_df[["Остаток", "Наименование товара"]].copy()
         raw_vals = result_df["_raw_val"].tolist()
 
         def color_rows(row):
