@@ -124,7 +124,16 @@ else:
             if not name or name == 'nan' or name.lower().startswith('всего'):
                 continue
             
-            raw_total = row.iloc[2] # Свободный остаток в 2-й индексной колонке (3-я колонка Excel)
+            # Определяем, является ли строка общей шапкой коллекции (без конкретного цвета)
+            # У шапок коллекций название обычно состоит только из названия самой коллекции (например, PALAZZO или ALLURE PREMIUM)
+            # Простые цвета всегда содержат дополнительные слова или маркеры.
+            # Мы можем отсечь строки, которые не содержат пробелов (кроме скобок) или совпадают с общими заголовками.
+            # Для надежности: если имя короткое и состоит из 1-2 слов без указания оттенка/цвета, либо идет перед списком оттенков.
+            # В данном прайсе у шапок коллекций в колонке № п/п (col 0) стоит сквозной номер или они идут первыми. 
+            # Проверим: если в строке нет специфичных для цвета слов и это не цвет — пропускаем.
+            # Точный признак: строки-коллекции в этом файле идут перед своими цветами.
+            
+            raw_total = row.iloc[2] # Свободный остаток в 3-й колонке
             try:
                 total_val = float(raw_total) if pd.notna(raw_total) else 0.0
             except:
@@ -145,8 +154,27 @@ else:
             products.append({
                 'name': name,
                 'total': total_val,
-                'transit': transit_status
+                'transit': transit_status,
+                'row_idx': index
             })
+
+        # Фильтруем общие строки-шапки коллекций (у них нет конкретного цвета, они суммарные)
+        # В файле Excel шапки коллекций идут перед цветами и часто не имеют уточняющих слов цвета (вроде Brown, Grey, Nude и т.д.)
+        # Проверим следующие строки: если текущая строка является названием коллекции для последующих строк, исключаем её.
+        cleaned_products = []
+        for i, p in enumerate(products):
+            name_upper = p['name'].upper()
+            # Проверяем, является ли это общим заголовком коллекции (например, "TOPAZ", "ALLURE PREMIUM", "PALAZZO (Piazzo)")
+            # Обычно у них нет слова цвета, а следующие строки содержат это же название с добавлением цвета.
+            is_collection_header = False
+            # Если это строка типа "TOPAZ" или "ALLURE", проверим следующие 2-3 позиции
+            if i + 1 < len(products):
+                next_name = products[i+1]['name'].upper()
+                if next_name.startswith(name_upper) and len(next_name) > len(name_upper):
+                    is_collection_header = True
+            
+            if not is_collection_header:
+                cleaned_products.append(p)
 
         # Поле поиска и кнопка со стрелкой вплотную друг к другу
         col_search, col_btn = st.columns([5, 1])
@@ -167,7 +195,7 @@ else:
         query = st.session_state["applied_query"].lower()
 
         filtered_data = []
-        for p in products:
+        for p in cleaned_products:
             if query in p['name'].lower():
                 val = p['total']
                 
